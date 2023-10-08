@@ -55,6 +55,10 @@ public:
         }
     }
 
+    constexpr void set_branch_i(Node from, Node to, size_t &condition_index){
+        _set_branch(node_index(from), node_index(to), condition_index);
+    }
+
     constexpr void set_branch(Node from, Node to, const Unit &condition){
         _set_branch(node_index(from), node_index(to), unit_index(condition));
     }
@@ -67,28 +71,31 @@ public:
         }
     }
 
-    template <typename ConditionChecker>
-    constexpr void set_branch_if(Node from, Node to){
-        ConditionChecker checker;
-
+    template <typename Filter>
+    constexpr void set_branch_if(Node from, Node to, Filter filter)
+        requires std::invocable<Filter, size_t> && std::predicate<Filter, size_t>
+    {
         size_t idx_from = node_index(from);
         size_t idx_to = node_index(to);
 
         for(size_t condition = 0; condition < UNITS_COUNT; condition ++){
-            if(checker(condition)){
+            if(filter(condition)){
                 _set_branch(idx_from, idx_to, condition);
             }
         }
     }
+    
 
     template <typename Iter, typename Predicate>
-    void traverse(Iter beg, Iter end, Node start_node, Predicate predicate){
+    void traverse(Iter beg, Iter end, Node start_node, Predicate predicate) 
+        requires std::forward_iterator<Iter> && std::invocable<Predicate, Node, Iter, Iter>
+    {
         Iter chunk_beg = beg;
 
         Node cur_node = start_node;
         size_t cur_node_idx = node_index(cur_node);
 
-        for(Iter it = beg; it != end; it++){
+        for(Iter it = beg; it != end; std::advance(it, 1)){
             Node node = nodes[cur_node_idx][unit_index(*it)];
             if(node != cur_node){
                 if(chunk_beg != it){
@@ -138,8 +145,8 @@ struct SplitTraversal{
 
 static constexpr Traversal<SplitTraversal> traversal(){
     Traversal<SplitTraversal> result;
-    result.set_branch_if<decltype([](unsigned char ch){return std::isspace(ch);})>(SplitTraversal::NOT_SPACE, SplitTraversal::SPACE);
-    result.set_branch_if<decltype([](unsigned char ch){return !std::isspace(ch);})>(SplitTraversal::SPACE, SplitTraversal::NOT_SPACE);
+    result.set_branch_if(SplitTraversal::NOT_SPACE, SplitTraversal::SPACE, [](unsigned char ch){return std::isspace(ch);});
+    result.set_branch_if(SplitTraversal::SPACE, SplitTraversal::NOT_SPACE, [](unsigned char ch){return !std::isspace(ch);});
     return result;
 }
 
