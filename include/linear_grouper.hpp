@@ -92,7 +92,7 @@ public:
     }
 
     template <typename Filter>
-    constexpr void set_branch_if(Node from, Node to, Filter filter)
+    void set_branch_if(Node from, Node to, Filter filter)
         requires std::invocable<Filter, size_t> && std::predicate<Filter, size_t>
     {
         size_t idx_from = node_index(from);

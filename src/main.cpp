@@ -51,7 +51,7 @@ struct TestGrouper{
     };
 };
 
-static constexpr LinearGrouper<TestGrouper> traversal(){
+static LinearGrouper<TestGrouper> traversal = []() {
     LinearGrouper<TestGrouper> result;
     result.set_all_branches(TestGrouper::SPACE, TestGrouper::UNDEFINED);
     result.set_all_branches(TestGrouper::SYMBOL_START, TestGrouper::UNDEFINED);
@@ -76,12 +76,12 @@ static constexpr LinearGrouper<TestGrouper> traversal(){
     result.set_branch_if(TestGrouper::SYMBOL, TestGrouper::SYMBOL, [](auto node){return std::isalnum(node) || node == '_';});
 
     return result;
-}
+}();
 
 int main(){
-    std::string test = "some   text    here  ";
+    std::string test = "123 is number and @$#@ is undefined";
 
-    traversal().traverse(test.cbegin(), test.cend(), TestGrouper::UNDEFINED, [] (auto node, std::string::const_iterator beg, std::string::const_iterator end) -> bool {
+    traversal.traverse(test.cbegin(), test.cend(), TestGrouper::UNDEFINED, [] (auto node, std::string::const_iterator beg, std::string::const_iterator end) -> bool {
         std::cout << TestGrouper::node_string(node) << ":" << std::string(beg, end) << std::endl;
         return true;
     });
